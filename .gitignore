@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+backend/dist/
+frontend/dist/
+frontend/.angular/
+
+# Go monitor binary (built by npm run build:go / postinstall)
+backend/bin/piu-monitor*
+
+# Runtime / local state
+backend/database.db
+backend/database.db-*
+backend/.piu.lock
+backend/.piu.pid
+backend/logs/*
+!backend/logs/.gitkeep
+storage/transactions/
+storage/confirmed/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.suo
+*.user
+.idea/
+.vscode/*
+!.vscode/extensions.json
