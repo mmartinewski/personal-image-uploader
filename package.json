@@ -1,6 +1,6 @@
 {
   "name": "personal-image-uploader",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "workspaces": [
     "backend",
@@ -10,7 +10,7 @@
     "build:go": "node scripts/build-go.cjs",
     "postinstall": "npm run build:go",
     "db:migrate": "npm --workspace backend run db:migrate",
-    "dev:backend": "npm --workspace backend run dev",
+    "dev:backend": "node scripts/kill-port.cjs 3737 && npm --workspace backend run dev",
     "dev:frontend": "npm --workspace frontend run start",
     "dev": "concurrently -n backend,frontend -c blue,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
     "start": "npm --workspace backend run start",

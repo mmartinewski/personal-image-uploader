@@ -27,6 +27,23 @@ export interface Output {
   updated_at: string;
 }
 
+export type OutputImportMode = 'merge' | 'replace';
+
+export interface OutputExportBundle {
+  format: 'piu-outputs';
+  version: 1;
+  exported_at: string;
+  outputs: (Omit<Output, 'id' | 'created_at' | 'updated_at' | 'fallback_output_id'> & {
+    fallback_ref: string | null;
+  })[];
+}
+
+export interface OutputImportResult {
+  mode: OutputImportMode;
+  imported: number;
+  skipped: number;
+}
+
 export interface DashboardStats {
   synced: number;
   pending: number;

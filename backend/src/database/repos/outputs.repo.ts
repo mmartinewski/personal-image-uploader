@@ -278,4 +278,13 @@ export const outputsRepo = {
 
     db.prepare('DELETE FROM outputs WHERE id = ?').run(id);
   },
+
+  deleteAll(): void {
+    db.prepare('DELETE FROM outputs WHERE is_fallback = 0').run();
+    db.prepare('DELETE FROM outputs WHERE is_fallback = 1').run();
+  },
+
+  runInTransaction<T>(fn: () => T): T {
+    return db.transaction(fn)();
+  },
 };

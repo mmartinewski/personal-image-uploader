@@ -5,6 +5,15 @@ import type {
   NewOutput,
   OutputType,
 } from '../types/domain.js';
+import type {
+  OutputExportBundle,
+  OutputExportEntry,
+  OutputImportMode,
+} from '../types/outputExport.js';
+import {
+  OUTPUT_EXPORT_FORMAT,
+  OUTPUT_EXPORT_VERSION,
+} from '../types/outputExport.js';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -178,4 +187,86 @@ export function validateOutputPatch(
   }
 
   return patch;
+}
+
+function validateImportEntry(body: unknown): OutputExportEntry {
+  const b = body as Record<string, unknown>;
+  if (!b?.name || typeof b.name !== 'string') throw new ValidationError('name is required');
+  const type = b.type as OutputType;
+  if (type !== 'discord_bot' && type !== 'discord_webhook') {
+    throw new ValidationError('type must be discord_bot or discord_webhook');
+  }
+  const input_type = (b.input_type as InputType) ?? 'directory';
+  if (input_type !== 'directory') {
+    throw new ValidationError('input_type must be directory');
+  }
+  const is_fallback = Boolean(b.is_fallback);
+  const is_default_fallback = Boolean(b.is_default_fallback);
+  const file_patterns = Array.isArray(b.file_patterns)
+    ? (b.file_patterns as string[]).map(String)
+    : is_fallback
+      ? []
+      : [];
+  if (!is_fallback && file_patterns.length === 0) {
+    throw new ValidationError('file_patterns must not be empty for routing rules');
+  }
+  if (!is_fallback && is_default_fallback) {
+    throw new ValidationError('is_default_fallback is only valid for fallback channels');
+  }
+
+  let fallback_ref: string | null = null;
+  if (b.fallback_ref !== undefined && b.fallback_ref !== null && b.fallback_ref !== '') {
+    if (typeof b.fallback_ref !== 'string') {
+      throw new ValidationError('fallback_ref must be a string or null');
+    }
+    fallback_ref = b.fallback_ref.trim();
+    if (!fallback_ref) fallback_ref = null;
+  }
+  if (is_fallback && fallback_ref != null) {
+    throw new ValidationError('fallback channels cannot reference another fallback');
+  }
+
+  return {
+    name: b.name.trim(),
+    input_type,
+    type,
+    is_fallback,
+    is_default_fallback: is_fallback ? is_default_fallback : false,
+    file_patterns,
+    fallback_ref: is_fallback ? null : fallback_ref,
+    destination_config: validateDestinationConfig(type, b.destination_config),
+    is_active: b.is_active !== false,
+  };
+}
+
+export function validateImportBundle(body: unknown): OutputExportBundle {
+  const b = body as Record<string, unknown>;
+  if (b?.format !== OUTPUT_EXPORT_FORMAT) {
+    throw new ValidationError('Invalid or missing format (expected piu-outputs)');
+  }
+  if (b.version !== OUTPUT_EXPORT_VERSION) {
+    throw new ValidationError(`Unsupported export version (expected ${OUTPUT_EXPORT_VERSION})`);
+  }
+  if (!Array.isArray(b.outputs)) {
+    throw new ValidationError('outputs must be an array');
+  }
+
+  return {
+    format: OUTPUT_EXPORT_FORMAT,
+    version: OUTPUT_EXPORT_VERSION,
+    exported_at:
+      typeof b.exported_at === 'string' ? b.exported_at : new Date().toISOString(),
+    outputs: b.outputs.map(validateImportEntry),
+  };
+}
+
+export function validateImportRequest(
+  body: unknown,
+): { mode: OutputImportMode; bundle: OutputExportBundle } {
+  const b = body as Record<string, unknown>;
+  const mode = b?.mode;
+  if (mode !== 'merge' && mode !== 'replace') {
+    throw new ValidationError('mode must be merge or replace');
+  }
+  return { mode, bundle: validateImportBundle(body) };
 }

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { exportOutputBundle, importOutputBundle } from '../outputTransfer.js';
 import { outputsRepo } from '../../database/repos/outputs.repo.js';
 import { validateNewOutput, validateOutputPatch } from '../validation.js';
 
@@ -6,6 +7,19 @@ export const outputsRouter = Router();
 
 outputsRouter.get('/', (_req, res) => {
   res.json(outputsRepo.listAll());
+});
+
+outputsRouter.get('/export', (_req, res) => {
+  res.json(exportOutputBundle());
+});
+
+outputsRouter.post('/import', (req, res, next) => {
+  try {
+    const result = importOutputBundle(req.body);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
 });
 
 outputsRouter.post('/', (req, res, next) => {

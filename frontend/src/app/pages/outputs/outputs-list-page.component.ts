@@ -1,11 +1,16 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import type { Output } from '../../core/models';
+import type { Output, OutputExportBundle, OutputImportMode } from '../../core/models';
 import { PageToolbarComponent } from '../../shared/page-toolbar.component';
 import { IconButtonComponent } from '../../shared/icon-button.component';
 import { TagListComponent } from '../../shared/tag-list.component';
+import {
+  buildOutputExportBundle,
+  downloadJsonFile,
+} from '../../shared/output-export.util';
 
 @Component({
   selector: 'app-outputs-list-page',
@@ -13,6 +18,21 @@ import { TagListComponent } from '../../shared/tag-list.component';
   imports: [CommonModule, RouterLink, PageToolbarComponent, IconButtonComponent, TagListComponent],
   template: `
     <app-page-toolbar title="Outputs" subtitle="Routing rules and fallback channels">
+      <button
+        type="button"
+        class="rounded-lg border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800"
+        (click)="exportConfig()"
+      >
+        Export
+      </button>
+      <button
+        type="button"
+        class="rounded-lg border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800 disabled:opacity-50"
+        [disabled]="importing"
+        (click)="importDialogOpen = true"
+      >
+        {{ importing ? 'Importing…' : 'Import' }}
+      </button>
       <a routerLink="/outputs/fallback/new" class="rounded-lg border border-amber-700 bg-amber-900/40 px-4 py-2 text-sm hover:bg-amber-900/60">
         Add fallback
       </a>
@@ -20,6 +40,56 @@ import { TagListComponent } from '../../shared/tag-list.component';
         Add rule
       </a>
     </app-page-toolbar>
+
+    @if (importDialogOpen) {
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        (click)="importDialogOpen = false"
+      >
+        <div
+          class="w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-xl"
+          (click)="$event.stopPropagation()"
+        >
+          <h3 class="text-lg font-semibold">Import outputs</h3>
+          <p class="mt-2 text-sm text-slate-400">
+            JSON file contains webhooks and bot tokens — keep it private.
+          </p>
+          <div class="mt-4 space-y-2">
+            <label
+              class="block cursor-pointer rounded-lg border border-slate-700 px-4 py-3 text-sm hover:bg-slate-800"
+            >
+              <span class="font-medium">Add</span>
+              <span class="mt-1 block text-slate-400">Keep existing; skip duplicate names.</span>
+              <input
+                type="file"
+                accept="application/json,.json"
+                class="hidden"
+                (change)="onImportFile($event, 'merge')"
+              />
+            </label>
+            <label
+              class="block cursor-pointer rounded-lg border border-amber-800 bg-amber-950/30 px-4 py-3 text-sm hover:bg-amber-950/50"
+            >
+              <span class="font-medium text-amber-200">Replace all</span>
+              <span class="mt-1 block text-amber-200/70">Delete every output here, then import the file.</span>
+              <input
+                type="file"
+                accept="application/json,.json"
+                class="hidden"
+                (change)="onImportFile($event, 'replace')"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            class="mt-4 w-full rounded-lg border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800"
+            (click)="importDialogOpen = false"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    }
 
     <section class="mb-8">
       <h3 class="mb-3 text-sm font-medium text-amber-200">Fallback channels</h3>
@@ -141,6 +211,8 @@ import { TagListComponent } from '../../shared/tag-list.component';
 export class OutputsListPageComponent implements OnInit {
   private readonly api = inject(ApiService);
 
+  importing = false;
+  importDialogOpen = false;
   fallbackChannels: Output[] = [];
   rules: Output[] = [];
 
@@ -166,5 +238,90 @@ export class OutputsListPageComponent implements OnInit {
       next: () => this.load(),
       error: (err) => alert(err.error?.error ?? 'Failed to delete'),
     });
+  }
+
+  exportConfig(): void {
+    const all = [...this.fallbackChannels, ...this.rules];
+    if (all.length === 0) {
+      alert('No outputs to export');
+      return;
+    }
+
+    const bundle = buildOutputExportBundle(all);
+    const filename = `piu-outputs-${new Date().toISOString().slice(0, 10)}.json`;
+    downloadJsonFile(filename, bundle);
+  }
+
+  onImportFile(event: Event, mode: OutputImportMode): void {
+    this.importDialogOpen = false;
+
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    file
+      .text()
+      .then((text) => {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          alert('Invalid JSON file');
+          return;
+        }
+
+        const bundle = parsed as OutputExportBundle;
+        if (bundle.format !== 'piu-outputs' || !Array.isArray(bundle.outputs)) {
+          alert('Not a valid PIU outputs export file');
+          return;
+        }
+
+        if (bundle.outputs.length === 0) {
+          alert('The export file contains no outputs');
+          return;
+        }
+
+        this.importing = true;
+        this.api.importOutputs(mode, bundle).subscribe({
+          next: (result) => {
+            this.importing = false;
+            this.load();
+            alert(this.importResultMessage(result));
+          },
+          error: (err: HttpErrorResponse) => {
+            this.importing = false;
+            alert(this.importErrorMessage(err));
+          },
+        });
+      })
+      .catch(() => alert('Could not read file'));
+  }
+
+  private importErrorMessage(err: HttpErrorResponse): string {
+    if (typeof err.error?.error === 'string') return err.error.error;
+    if (err.status === 404) {
+      return 'Import API not available. Stop the PIU desktop app (or anything on port 3737), then run npm run dev again.';
+    }
+    if (err.status === 0) {
+      return 'Could not reach the backend. Is npm run dev running?';
+    }
+    return `Failed to import (HTTP ${err.status})`;
+  }
+
+  private importResultMessage(result: {
+    imported: number;
+    skipped: number;
+    mode: OutputImportMode;
+  }): string {
+    if (result.imported === 0 && result.skipped > 0) {
+      return `No new outputs added: ${result.skipped} already exist (Add mode skips duplicates). Use Replace mode to overwrite all outputs.`;
+    }
+    if (result.imported === 0) {
+      return 'No outputs were imported.';
+    }
+    const skipped =
+      result.skipped > 0 ? ` ${result.skipped} skipped (duplicate names).` : '';
+    return `Import complete: ${result.imported} output(s) added.${skipped}`;
   }
 }

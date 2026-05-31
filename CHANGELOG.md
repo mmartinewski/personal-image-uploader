@@ -2,6 +2,20 @@
 
 All notable changes to PIU are documented here. Version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-05-31
+
+### Added
+
+- Export outputs to JSON (routing rules, fallback channels, default fallback, Discord credentials)
+- Import outputs from JSON with **Add** (merge, skip duplicates) or **Replace all** modes
+- `GET /api/outputs/export` and `POST /api/outputs/import` backend endpoints
+
+### Fixed
+
+- Export download blocked by browser user-gesture rules (client-side export)
+- Import failing silently when an old backend was already listening on port 3737
+- `npm run dev` now stops the previous process on port 3737 before starting the backend
+
 ## [1.1.0] - 2026-05-31
 
 ### Added
@@ -24,5 +38,6 @@ All notable changes to PIU are documented here. Version numbers follow [Semantic
 - Sidecar asset paths and `bindings` dependency in installer layout
 - False error dialogs on Quit and uninstall
 
+[1.2.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.2.0
 [1.1.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.1.0
 [1.0.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.0.0

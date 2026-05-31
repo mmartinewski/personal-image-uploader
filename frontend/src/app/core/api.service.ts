@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import type { DashboardStats, DlqEntry, Input, Output } from './models';
+import type { DashboardStats, DlqEntry, Input, Output, OutputExportBundle, OutputImportMode, OutputImportResult } from './models';
 
 const API = '/api';
 
@@ -38,6 +38,14 @@ export class ApiService {
 
   deleteOutput(id: number) {
     return this.http.delete<void>(`${API}/outputs/${id}`);
+  }
+
+  exportOutputs() {
+    return this.http.get<OutputExportBundle>(`${API}/outputs/export`);
+  }
+
+  importOutputs(mode: OutputImportMode, bundle: OutputExportBundle) {
+    return this.http.post<OutputImportResult>(`${API}/outputs/import`, { mode, ...bundle });
   }
 
   getDashboardStats() {
