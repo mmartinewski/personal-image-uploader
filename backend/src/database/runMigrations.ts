@@ -1,12 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { migrationsDir } from '../paths.js';
 import { db } from './db.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const migrationsDir = path.join(__dirname, 'migrations');
-
 export function runMigrations(): void {
+  const dir = migrationsDir();
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS _migrations (
       name TEXT PRIMARY KEY,
@@ -19,13 +18,13 @@ export function runMigrations(): void {
   );
 
   const files = fs
-    .readdirSync(migrationsDir)
+    .readdirSync(dir)
     .filter((f) => f.endsWith('.sql'))
     .sort();
 
   for (const file of files) {
     if (applied.has(file)) continue;
-    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    const sql = fs.readFileSync(path.join(dir, file), 'utf8');
     const runOne = db.transaction(() => {
       db.exec(sql);
       db.prepare('INSERT INTO _migrations (name) VALUES (?)').run(file);

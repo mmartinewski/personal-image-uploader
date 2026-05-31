@@ -6,6 +6,19 @@ import { ApiService } from '../../core/api.service';
 import { TagInputComponent, normalizeExtensionTag } from '../../shared/tag-input.component';
 import { PageToolbarComponent } from '../../shared/page-toolbar.component';
 
+function isoToDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function datetimeLocalToIso(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) return null;
+  return new Date(ms).toISOString();
+}
+
 @Component({
   selector: 'app-input-form-page',
   standalone: true,
@@ -49,6 +62,35 @@ import { PageToolbarComponent } from '../../shared/page-toolbar.component';
             [transform]="normalizeExtension"
           />
         </div>
+        <div>
+          <div class="mb-1 flex items-center justify-between gap-2">
+            <label class="block text-xs text-slate-500">Upload only files created from</label>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="rounded border border-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-800"
+                (click)="setUploadAfterNow()"
+              >
+                Now
+              </button>
+              <button
+                type="button"
+                class="rounded border border-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-800"
+                (click)="clearUploadAfter()"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <input
+            type="datetime-local"
+            formControlName="upload_after_local"
+            class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+          />
+          <p class="mt-1 text-xs text-slate-500">
+            Defaults to now for new inputs. Only files created at or after this moment are uploaded. Use Clear to accept files of any age.
+          </p>
+        </div>
         <label class="flex items-center gap-2 text-sm">
           <input type="checkbox" formControlName="is_active" />
           Active
@@ -74,6 +116,7 @@ export class InputFormPageComponent implements OnInit {
     name: ['', Validators.required],
     source_path: ['', Validators.required],
     extensions: [[] as string[]],
+    upload_after_local: [''],
     is_active: [true],
   });
 
@@ -94,6 +137,7 @@ export class InputFormPageComponent implements OnInit {
             name: row.name,
             source_path: row.source_path,
             extensions: [...row.extensions],
+            upload_after_local: row.upload_after ? isoToDatetimeLocal(row.upload_after) : '',
             is_active: row.is_active,
           });
           this.loading = false;
@@ -106,8 +150,17 @@ export class InputFormPageComponent implements OnInit {
     } else {
       this.form.patchValue({
         extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+        upload_after_local: isoToDatetimeLocal(new Date().toISOString()),
       });
     }
+  }
+
+  setUploadAfterNow(): void {
+    this.form.patchValue({ upload_after_local: isoToDatetimeLocal(new Date().toISOString()) });
+  }
+
+  clearUploadAfter(): void {
+    this.form.patchValue({ upload_after_local: '' });
   }
 
   save(): void {
@@ -118,6 +171,7 @@ export class InputFormPageComponent implements OnInit {
       name: v.name!,
       source_path: v.source_path!,
       extensions: v.extensions ?? [],
+      upload_after: datetimeLocalToIso(v.upload_after_local),
       is_active: v.is_active ?? true,
     };
 

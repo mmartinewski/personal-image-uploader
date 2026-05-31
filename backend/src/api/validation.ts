@@ -13,12 +13,26 @@ export class ValidationError extends Error {
   }
 }
 
+export function parseUploadAfter(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new ValidationError('upload_after must be an ISO datetime string or null');
+  }
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) {
+    throw new ValidationError('upload_after must be a valid ISO datetime');
+  }
+  return new Date(ms).toISOString();
+}
+
 export function validateNewInput(body: unknown): NewInput {
   const b = body as Record<string, unknown>;
   if (!b?.name || typeof b.name !== 'string') throw new ValidationError('name is required');
   if (!b?.source_path || typeof b.source_path !== 'string') {
     throw new ValidationError('source_path is required');
   }
+  const uploadAfter = parseUploadAfter(b.upload_after);
   return {
     name: b.name.trim(),
     source_path: b.source_path.trim(),
@@ -26,6 +40,7 @@ export function validateNewInput(body: unknown): NewInput {
     extensions: Array.isArray(b.extensions)
       ? (b.extensions as string[]).map((e) => String(e).toLowerCase().replace(/^\./, ''))
       : undefined,
+    upload_after: uploadAfter === undefined ? new Date().toISOString() : uploadAfter,
     is_active: b.is_active !== false,
   };
 }

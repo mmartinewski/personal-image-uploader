@@ -14,6 +14,8 @@ let child: ChildProcess | null = null;
 let backoffIndex = 0;
 let startedAt = Date.now();
 let goRunning = false;
+let restartTimer: NodeJS.Timeout | null = null;
+let allowRestart = true;
 
 export function isGoBinaryPresent(): boolean {
   return fs.existsSync(goBinaryPath());
@@ -21,6 +23,42 @@ export function isGoBinaryPresent(): boolean {
 
 export function isGoRunning(): boolean {
   return goRunning;
+}
+
+export function stopGoProcess(): void {
+  allowRestart = false;
+
+  if (restartTimer) {
+    clearTimeout(restartTimer);
+    restartTimer = null;
+  }
+
+  if (!child) {
+    goRunning = false;
+    return;
+  }
+
+  const proc = child;
+  child = null;
+  goRunning = false;
+  proc.removeAllListeners('exit');
+  proc.removeAllListeners('error');
+
+  if (!proc.pid) return;
+
+  try {
+    if (process.platform === 'win32') {
+      spawn('taskkill', ['/PID', String(proc.pid), '/T', '/F'], {
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+    } else {
+      proc.kill('SIGTERM');
+    }
+    logger.info({ pid: proc.pid }, 'Go monitor stop requested');
+  } catch (err) {
+    logger.warn({ err, pid: proc.pid }, 'Failed to stop Go monitor');
+  }
 }
 
 export function startGoProcess(): void {
@@ -80,6 +118,8 @@ function spawnOnce(): void {
 }
 
 function scheduleRestart(): void {
+  if (!allowRestart) return;
+
   const uptime = Date.now() - startedAt;
   if (uptime >= GO_UPTIME_RESET_MS) {
     backoffIndex = 0;
@@ -88,7 +128,9 @@ function scheduleRestart(): void {
   const delay = GO_RESTART_BACKOFF_MS[Math.min(backoffIndex, GO_RESTART_BACKOFF_MS.length - 1)]!;
   backoffIndex += 1;
 
-  setTimeout(() => {
+  restartTimer = setTimeout(() => {
+    restartTimer = null;
+    if (!allowRestart) return;
     logger.info({ delay }, 'Restarting Go monitor');
     spawnOnce();
   }, delay);

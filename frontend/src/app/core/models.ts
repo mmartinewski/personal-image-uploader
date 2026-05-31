@@ -4,6 +4,7 @@ export interface Input {
   type: 'directory';
   source_path: string;
   extensions: string[];
+  upload_after: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

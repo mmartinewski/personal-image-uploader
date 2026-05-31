@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import type { DashboardStats, DlqEntry, Input, Output } from './models';
 
-const API = 'http://127.0.0.1:3737/api';
+const API = '/api';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {

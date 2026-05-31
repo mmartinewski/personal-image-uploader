@@ -4,8 +4,14 @@ node_modules/
 # Build output
 dist/
 backend/dist/
+backend/dist-bundle/
 frontend/dist/
 frontend/.angular/
+src-tauri/target/
+src-tauri/binaries/piu-backend*
+src-tauri/binaries/better_sqlite3.node
+src-tauri/binaries/piu-backend-assets/
+release/
 
 # Go monitor binary (built by npm run build:go / postinstall)
 backend/bin/piu-monitor*
@@ -17,6 +23,10 @@ backend/.piu.lock
 backend/.piu.pid
 backend/logs/*
 !backend/logs/.gitkeep
+database.db
+database.db-*
+.piu.pid
+logs/
 storage/transactions/
 storage/confirmed/
 

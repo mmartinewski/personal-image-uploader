@@ -8,6 +8,7 @@ interface InputRow {
   type: InputType;
   source_path: string;
   extensions: string;
+  upload_after: string | null;
   is_active: number;
   created_at: string;
   updated_at: string;
@@ -20,6 +21,7 @@ function mapRow(row: InputRow): Input {
     type: row.type,
     source_path: row.source_path,
     extensions: JSON.parse(row.extensions) as string[],
+    upload_after: row.upload_after ?? null,
     is_active: row.is_active === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -55,13 +57,15 @@ export const inputsRepo = {
     const extensions = JSON.stringify(data.extensions ?? DEFAULT_EXTENSIONS);
     const type = data.type ?? 'directory';
     const isActive = data.is_active !== false ? 1 : 0;
+    const uploadAfter =
+      data.upload_after !== undefined ? data.upload_after : new Date().toISOString();
 
     const result = db
       .prepare(
-        `INSERT INTO inputs (name, type, source_path, extensions, is_active, updated_at)
-         VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+        `INSERT INTO inputs (name, type, source_path, extensions, upload_after, is_active, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
       )
-      .run(data.name, type, data.source_path, extensions, isActive);
+      .run(data.name, type, data.source_path, extensions, uploadAfter, isActive);
 
     return inputsRepo.getById(Number(result.lastInsertRowid))!;
   },
@@ -74,12 +78,14 @@ export const inputsRepo = {
     const source_path = patch.source_path ?? existing.source_path;
     const type = patch.type ?? existing.type;
     const extensions = JSON.stringify(patch.extensions ?? existing.extensions);
+    const upload_after =
+      patch.upload_after !== undefined ? patch.upload_after : existing.upload_after;
     const is_active = patch.is_active !== undefined ? (patch.is_active ? 1 : 0) : (existing.is_active ? 1 : 0);
 
     db.prepare(
-      `UPDATE inputs SET name = ?, type = ?, source_path = ?, extensions = ?, is_active = ?, updated_at = datetime('now')
+      `UPDATE inputs SET name = ?, type = ?, source_path = ?, extensions = ?, upload_after = ?, is_active = ?, updated_at = datetime('now')
        WHERE id = ?`,
-    ).run(name, type, source_path, extensions, is_active, id);
+    ).run(name, type, source_path, extensions, upload_after, is_active, id);
 
     return inputsRepo.getById(id)!;
   },

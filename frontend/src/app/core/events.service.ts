@@ -9,7 +9,7 @@ export type PiUEvent =
   | { type: 'transaction_completed'; payload: { txn_id: string; dlq: boolean } }
   | { type: 'heartbeat'; payload: { at: string } };
 
-const SSE_URL = 'http://127.0.0.1:3737/api/events';
+const SSE_URL = '/api/events';
 const RECONNECT_MS = 3_000;
 
 @Injectable({ providedIn: 'root' })

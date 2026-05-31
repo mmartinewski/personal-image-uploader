@@ -31,6 +31,7 @@ import { TagListComponent } from '../../shared/tag-list.component';
               <th class="px-4 py-3 font-medium">Name</th>
               <th class="px-4 py-3 font-medium">Path</th>
               <th class="px-4 py-3 font-medium">Extensions</th>
+              <th class="px-4 py-3 font-medium">Upload from</th>
               <th class="px-4 py-3 font-medium">Active</th>
               <th class="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
@@ -42,6 +43,13 @@ import { TagListComponent } from '../../shared/tag-list.component';
                 <td class="px-4 py-3 font-mono text-xs text-slate-400">{{ row.source_path }}</td>
                 <td class="px-4 py-3">
                   <app-tag-list [tags]="row.extensions" />
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-400">
+                  @if (row.upload_after) {
+                    {{ row.upload_after | date: 'short' }}
+                  } @else {
+                    <span class="text-slate-600">Any time</span>
+                  }
                 </td>
                 <td class="px-4 py-3">
                   <span

@@ -6,6 +6,7 @@ import type { Input } from '../types/domain.js';
 import { logger } from '../util/logger.js';
 import { buildProcessedIndex, isPathAlreadyProcessed } from './processedIndex.js';
 import { handleFileDetected } from './transaction.js';
+import { isFileCreatedAfterCutoff } from './uploadCutoff.js';
 
 import { STARTUP_BACKLOG_MAX_FILES } from '../config.js';
 
@@ -43,6 +44,7 @@ export async function runInputBacklogScan(): Promise<void> {
   let scanned = 0;
   let skippedKnown = 0;
   let skippedMissing = 0;
+  let skippedBeforeCutoff = 0;
   let enqueued = 0;
 
   for (const input of inputs) {
@@ -62,6 +64,11 @@ export async function runInputBacklogScan(): Promise<void> {
 
       if (!fs.existsSync(filePath)) {
         skippedMissing += 1;
+        continue;
+      }
+
+      if (!isFileCreatedAfterCutoff(filePath, input.upload_after)) {
+        skippedBeforeCutoff += 1;
         continue;
       }
 
@@ -88,7 +95,7 @@ export async function runInputBacklogScan(): Promise<void> {
 
   const ms = Date.now() - started;
   logger.info(
-    { scanned, skippedKnown, skippedMissing, enqueued, ms },
+    { scanned, skippedKnown, skippedMissing, skippedBeforeCutoff, enqueued, ms },
     'Startup backlog scan complete',
   );
 }

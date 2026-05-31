@@ -15,6 +15,7 @@ import { atomicWriteJson, atomicWriteJsonSync, copyFileTo, moveDir, moveFile, sh
 import { logger } from '../util/logger.js';
 import { eventBus } from '../api/eventBus.js';
 import { route } from './router.js';
+import { isFileCreatedAfterCutoff } from './uploadCutoff.js';
 
 const TXN_FILE = 'transaction.json';
 const DELIVERIES_DIR = 'deliveries';
@@ -204,6 +205,14 @@ export async function handleFileDetected(absPath: string): Promise<void> {
   const input = findInputForPath(absPath, inputs);
   if (!input) {
     logger.debug({ path: absPath }, 'File ignored: path is not under any active input');
+    return;
+  }
+
+  if (!isFileCreatedAfterCutoff(absPath, input.upload_after)) {
+    logger.debug(
+      { path: absPath, input_id: input.id, upload_after: input.upload_after },
+      'File ignored: created before upload cutoff',
+    );
     return;
   }
 

@@ -8,6 +8,8 @@ export interface Input {
   type: InputType;
   source_path: string;
   extensions: string[];
+  /** ISO datetime — only files created at or after this moment are uploaded. */
+  upload_after: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -18,6 +20,7 @@ export interface NewInput {
   source_path: string;
   type?: InputType;
   extensions?: string[];
+  upload_after?: string | null;
   is_active?: boolean;
 }
 

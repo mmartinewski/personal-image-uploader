@@ -1,17 +1,23 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {
+  confirmedRoot,
+  dataRoot,
+  frontendDistDir,
+  goBinaryPath,
+  logDir,
+  pidFilePath,
+  storageRoot,
+  txnRoot,
+} from './paths.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-export const REPO_ROOT = path.resolve(__dirname, '../..');
-export const BACKEND_ROOT = path.resolve(__dirname, '..');
-export const STORAGE_ROOT = path.join(REPO_ROOT, 'storage');
-export const TXN_ROOT = path.join(STORAGE_ROOT, 'transactions', 'image_upload');
-export const CONFIRMED_ROOT = path.join(STORAGE_ROOT, 'confirmed');
+export const REPO_ROOT = dataRoot();
+export const BACKEND_ROOT = dataRoot();
+export const STORAGE_ROOT = storageRoot();
+export const TXN_ROOT = txnRoot();
+export const CONFIRMED_ROOT = confirmedRoot();
 
 export const HOST = '127.0.0.1';
-export const PORT = 3737;
-export const CORS_ORIGIN = 'http://localhost:4200';
+export const PORT = Number(process.env.PIU_PORT) || 3737;
+export const APP_URL = `http://${HOST}:${PORT}`;
 
 export const STABILITY_POLL_MS = 200;
 export const STABILITY_WINDOW_MS = 600;
@@ -29,15 +35,4 @@ export const DEFAULT_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 /** Max files processed from input folders on each backend boot (backlog catch-up). */
 export const STARTUP_BACKLOG_MAX_FILES = 100;
 
-export function goBinaryPath(): string {
-  const name = process.platform === 'win32' ? 'piu-monitor.exe' : 'piu-monitor';
-  return path.join(BACKEND_ROOT, 'bin', name);
-}
-
-export function pidFilePath(): string {
-  return path.join(BACKEND_ROOT, '.piu.pid');
-}
-
-export function logDir(): string {
-  return path.join(BACKEND_ROOT, 'logs');
-}
+export { goBinaryPath, pidFilePath, logDir, frontendDistDir };
