@@ -4,13 +4,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { TagInputComponent, normalizeExtensionTag } from '../../shared/tag-input.component';
+import { DatetimeInputComponent, dateToDatetimeLocal } from '../../shared/datetime-input.component';
 import { PageToolbarComponent } from '../../shared/page-toolbar.component';
-
-function isoToDatetimeLocal(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function datetimeLocalToIso(value: string | null | undefined): string | null {
   if (!value?.trim()) return null;
@@ -22,7 +17,14 @@ function datetimeLocalToIso(value: string | null | undefined): string | null {
 @Component({
   selector: 'app-input-form-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TagInputComponent, PageToolbarComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    TagInputComponent,
+    DatetimeInputComponent,
+    PageToolbarComponent,
+  ],
   template: `
     <app-page-toolbar
       [title]="isEdit ? 'Edit input' : 'New input'"
@@ -82,11 +84,7 @@ function datetimeLocalToIso(value: string | null | undefined): string | null {
               </button>
             </div>
           </div>
-          <input
-            type="datetime-local"
-            formControlName="upload_after_local"
-            class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-          />
+          <app-datetime-input formControlName="upload_after_local" />
           <p class="mt-1 text-xs text-slate-500">
             Defaults to now for new inputs. Only files created at or after this moment are uploaded. Use Clear to accept files of any age.
           </p>
@@ -137,7 +135,7 @@ export class InputFormPageComponent implements OnInit {
             name: row.name,
             source_path: row.source_path,
             extensions: [...row.extensions],
-            upload_after_local: row.upload_after ? isoToDatetimeLocal(row.upload_after) : '',
+            upload_after_local: row.upload_after ? dateToDatetimeLocal(new Date(row.upload_after)) : '',
             is_active: row.is_active,
           });
           this.loading = false;
@@ -150,13 +148,13 @@ export class InputFormPageComponent implements OnInit {
     } else {
       this.form.patchValue({
         extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
-        upload_after_local: isoToDatetimeLocal(new Date().toISOString()),
+        upload_after_local: dateToDatetimeLocal(new Date()),
       });
     }
   }
 
   setUploadAfterNow(): void {
-    this.form.patchValue({ upload_after_local: isoToDatetimeLocal(new Date().toISOString()) });
+    this.form.patchValue({ upload_after_local: dateToDatetimeLocal(new Date()) });
   }
 
   clearUploadAfter(): void {

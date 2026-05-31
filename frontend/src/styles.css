@@ -1,3 +1,69 @@
+@import 'flatpickr/dist/flatpickr.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Flatpickr — dark theme aligned with PIU UI */
+.flatpickr-calendar {
+  @apply rounded-lg border border-slate-700 bg-slate-900 text-slate-100 shadow-xl;
+}
+
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-weekdays,
+.flatpickr-weekday {
+  @apply bg-slate-900 text-slate-300;
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  @apply fill-slate-300 hover:fill-white;
+}
+
+.flatpickr-day {
+  @apply text-slate-200;
+}
+
+.flatpickr-day:hover,
+.flatpickr-day:focus {
+  @apply border-indigo-500 bg-slate-800;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  @apply border-indigo-600 bg-indigo-600 text-white;
+}
+
+.flatpickr-day.today {
+  @apply border-slate-500;
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  @apply text-slate-600;
+}
+
+.flatpickr-time {
+  @apply border-t border-slate-700;
+}
+
+.flatpickr-time input,
+.flatpickr-time .flatpickr-am-pm {
+  @apply bg-slate-950 text-slate-100;
+}
+
+.flatpickr-time input:hover,
+.flatpickr-time .flatpickr-am-pm:hover {
+  @apply bg-slate-800;
+}
+
+.numInputWrapper span.arrowUp:after {
+  border-bottom-color: #94a3b8;
+}
+
+.numInputWrapper span.arrowDown:after {
+  border-top-color: #94a3b8;
+}

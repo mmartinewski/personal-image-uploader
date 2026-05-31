@@ -1,6 +1,6 @@
 [package]
 name = "piu-desktop"
-version = "1.0.0"
+version = "1.1.0"
 description = "Personal Image Uploader"
 authors = ["mmartinewski"]
 edition = "2021"

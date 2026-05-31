@@ -2,6 +2,12 @@
 
 All notable changes to PIU are documented here. Version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-05-31
+
+### Added
+
+- Date/time picker (Flatpickr) for the input **Upload only files created from** field — calendar + hour selection in dark theme
+
 ## [1.0.0] - 2026-05-31
 
 ### Added
@@ -18,4 +24,5 @@ All notable changes to PIU are documented here. Version numbers follow [Semantic
 - Sidecar asset paths and `bindings` dependency in installer layout
 - False error dialogs on Quit and uninstall
 
+[1.1.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.1.0
 [1.0.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.0.0
