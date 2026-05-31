@@ -1,5 +1,6 @@
 {
   "name": "personal-image-uploader",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
     "backend",
@@ -16,7 +17,8 @@
     "tauri:before-dev": "node scripts/tauri-before-dev.cjs",
     "build:desktop": "node scripts/build-desktop.cjs",
     "tauri:dev": "node scripts/run-tauri.cjs dev",
-    "tauri:build": "node scripts/run-tauri.cjs build"
+    "tauri:build": "node scripts/run-tauri.cjs build",
+    "version:sync": "node scripts/sync-version.cjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.2",

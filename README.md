@@ -146,6 +146,51 @@ Copy-Item src-tauri\target\release\bundle\nsis\PIU_*_x64-setup.exe release\
 
 First build can take several minutes (Rust + sidecar rebuild of `better-sqlite3` for Node 20).
 
+### GitHub Releases
+
+Releases are published automatically when a version tag is pushed. GitHub Actions builds the Windows NSIS installer on `windows-latest` and attaches it to the release.
+
+**Version source of truth:** root `package.json` → synced to `backend/`, `frontend/`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml` via `npm run version:sync`.
+
+#### Publish a new release
+
+1. Update `CHANGELOG.md` with the new version.
+2. Bump the version (example `1.1.0`):
+
+   ```powershell
+   npm run version:sync 1.1.0
+   ```
+
+3. Commit and tag:
+
+   ```powershell
+   git add CHANGELOG.md package.json backend/package.json frontend/package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+   git commit -m "Release v1.1.0"
+   git tag v1.1.0
+   git push origin main
+   git push origin v1.1.0
+   ```
+
+4. Open **GitHub → Releases** — the workflow uploads `PIU_<version>_x64-setup.exe` automatically.
+
+Tags must match `v*.*.*` (e.g. `v1.0.0`, `v1.1.0-beta.1`). Pre-release tags containing `-` are marked as pre-releases on GitHub.
+
+#### Workflows
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `.github/workflows/ci.yml` | push/PR to `main` | Build backend + frontend |
+| `.github/workflows/release.yml` | push tag `v*.*.*` | Build Windows installer + GitHub Release |
+
+#### First release (v1.0.0)
+
+If v1.0.0 was never tagged:
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ### Uninstall
 
 Use **Settings → Apps → PIU → Uninstall**. Optionally check **remove all user data** to delete `%APPDATA%\com.mmartinewski.piu\` and `%LOCALAPPDATA%\PIU\`.
@@ -181,6 +226,7 @@ taskkill /F /IM piu-monitor.exe /T
 
 - [Technical specification](docs/v1.md)
 - [Execution plan](docs/v1.plan.md)
+- [Changelog](CHANGELOG.md)
 
 ## License
 
