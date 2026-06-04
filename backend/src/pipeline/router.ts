@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { outputsRepo } from '../database/repos/outputs.repo.js';
 import type { Input } from '../types/domain.js';
-import { matchesFilePattern } from './patternMatch.js';
+import { matchesFilePattern, relativePathForPattern } from './patternMatch.js';
 import { resolveFallbackForNoMatch } from './fallbackResolve.js';
 
 export type RouteResult =
@@ -10,11 +10,15 @@ export type RouteResult =
   | { kind: 'no_route' };
 
 export function route(filePath: string, input: Input): RouteResult {
-  const basename = path.basename(filePath);
   const ext = path.extname(filePath).slice(1).toLowerCase();
 
   if (!input.extensions.includes(ext)) {
     return { kind: 'ignored', reason: 'extension' };
+  }
+
+  const relativePath = relativePathForPattern(filePath, input.source_path);
+  if (!relativePath) {
+    return { kind: 'no_route' };
   }
 
   const activeRules = outputsRepo.findActive({
@@ -25,7 +29,7 @@ export function route(filePath: string, input: Input): RouteResult {
   const matched: number[] = [];
   for (const rule of activeRules) {
     for (const pattern of rule.file_patterns) {
-      if (matchesFilePattern(basename, pattern)) {
+      if (matchesFilePattern(filePath, input.source_path, pattern)) {
         matched.push(rule.id);
         break;
       }

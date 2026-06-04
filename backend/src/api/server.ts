@@ -10,6 +10,7 @@ import { outputsRouter } from './routes/outputs.routes.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
 import { dlqRouter } from './routes/dlq.routes.js';
 import { eventsRouter } from './routes/events.routes.js';
+import { utilsRouter } from './routes/utils.routes.js';
 import { logger } from '../util/logger.js';
 
 let httpServer: http.Server | null = null;
@@ -25,6 +26,7 @@ export function createApp(): express.Application {
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/dlq', dlqRouter);
   app.use('/api/events', eventsRouter);
+  app.use('/api/utils', utilsRouter);
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });

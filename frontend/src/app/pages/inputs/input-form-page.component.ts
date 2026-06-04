@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { TagInputComponent, normalizeExtensionTag } from '../../shared/tag-input.component';
 import { DatetimeInputComponent, dateToDatetimeLocal } from '../../shared/datetime-input.component';
 import { PageToolbarComponent } from '../../shared/page-toolbar.component';
+import { DirectoryPickerService } from '../../core/directory-picker.service';
 
 function datetimeLocalToIso(value: string | null | undefined): string | null {
   if (!value?.trim()) return null;
@@ -52,7 +53,20 @@ function datetimeLocalToIso(value: string | null | undefined): string | null {
         </div>
         <div>
           <label class="mb-1 block text-xs text-slate-500">Local path</label>
-          <input formControlName="source_path" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono" />
+          <div class="flex gap-2">
+            <input
+              formControlName="source_path"
+              class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono"
+            />
+            <button
+              type="button"
+              class="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50"
+              [disabled]="browsingPath"
+              (click)="browseForPath()"
+            >
+              {{ browsingPath ? '…' : 'Browse…' }}
+            </button>
+          </div>
         </div>
         <div>
           <label class="mb-1 block text-xs text-slate-500">Extensions</label>
@@ -102,12 +116,14 @@ export class InputFormPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly directoryPicker = inject(DirectoryPickerService);
 
   readonly normalizeExtension = normalizeExtensionTag;
 
   isEdit = false;
   loading = false;
   saving = false;
+  browsingPath = false;
   inputId: number | null = null;
 
   readonly form = this.fb.group({
@@ -159,6 +175,28 @@ export class InputFormPageComponent implements OnInit {
 
   clearUploadAfter(): void {
     this.form.patchValue({ upload_after_local: '' });
+  }
+
+  async browseForPath(): Promise<void> {
+    if (this.browsingPath) return;
+    this.browsingPath = true;
+    try {
+      const current = this.form.get('source_path')?.value;
+      const picked = await this.directoryPicker.pickDirectory(
+        typeof current === 'string' ? current : null,
+      );
+      if (picked) {
+        this.form.patchValue({ source_path: picked });
+      }
+    } catch (err) {
+      console.error(err);
+      const msg =
+        (err as { error?: { error?: string } })?.error?.error ??
+        'Could not open the folder picker. Make sure the PIU backend is running.';
+      alert(msg);
+    } finally {
+      this.browsingPath = false;
+    }
   }
 
   save(): void {

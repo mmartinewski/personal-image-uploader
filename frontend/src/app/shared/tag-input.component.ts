@@ -150,3 +150,8 @@ export class TagInputComponent implements ControlValueAccessor, Validator {
 export function normalizeExtensionTag(value: string): string {
   return value.trim().toLowerCase().replace(/^\./, '');
 }
+
+/** Normalize path-style file patterns (backslashes → forward slashes). */
+export function normalizeFilePatternTag(value: string): string {
+  return value.trim().replace(/\\/g, '/');
+}

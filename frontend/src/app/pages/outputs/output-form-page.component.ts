@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import type { Output, OutputType } from '../../core/models';
-import { TagInputComponent } from '../../shared/tag-input.component';
+import { TagInputComponent, normalizeFilePatternTag } from '../../shared/tag-input.component';
 import { PageToolbarComponent } from '../../shared/page-toolbar.component';
 
 type OutputKind = 'fallback' | 'rule';
@@ -67,8 +67,9 @@ type OutputKind = 'fallback' | 'rule';
             <app-tag-input
               formControlName="file_patterns"
               [required]="true"
-              placeholder="* or *.jpg or Satisfactory"
-              hint="Press Enter to add each pattern. Glob-style (VS Code): * all files, *.jpg extension, *screenshot* contains. Plain text without * matches as substring."
+              [transform]="normalizeFilePattern"
+              placeholder="**/FactoryGame/Saved/Screenshots/Windows/**"
+              hint="Press Enter to add each pattern. Backslashes are converted to /. Matched against the full file path and the path relative to the input."
             />
           </div>
           <div>
@@ -104,6 +105,8 @@ export class OutputFormPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  readonly normalizeFilePattern = normalizeFilePatternTag;
+
   kind: OutputKind = 'rule';
   isEdit = false;
   loading = false;
@@ -131,7 +134,7 @@ export class OutputFormPageComponent implements OnInit {
   get pageSubtitle(): string {
     return this.kind === 'fallback'
       ? 'Discord destination used when no routing rule matches'
-      : 'Match file names and send to Discord';
+      : 'Match file paths (relative to the input folder) and send to Discord';
   }
 
   ngOnInit(): void {
@@ -180,7 +183,7 @@ export class OutputFormPageComponent implements OnInit {
       bot_token: cfg['bot_token'] ?? '',
       channel_id: cfg['channel_id'] ?? '',
       webhook_url: cfg['webhook_url'] ?? '',
-      file_patterns: [...row.file_patterns],
+      file_patterns: row.file_patterns.map((p) => normalizeFilePatternTag(p)),
       fallback_output_id: row.fallback_output_id,
       is_default_fallback: row.is_default_fallback,
       is_active: row.is_active,
@@ -227,7 +230,9 @@ export class OutputFormPageComponent implements OnInit {
       name: v.name!,
       input_type: 'directory' as const,
       type: v.type!,
-      file_patterns: is_fallback ? [] : (v.file_patterns ?? []),
+      file_patterns: is_fallback
+        ? []
+        : (v.file_patterns ?? []).map((p) => normalizeFilePatternTag(p)),
       is_fallback,
       is_default_fallback: is_fallback ? (v.is_default_fallback ?? false) : false,
       fallback_output_id: is_fallback ? null : v.fallback_output_id,
