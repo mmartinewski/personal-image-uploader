@@ -45,11 +45,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build NSIS installer
+      - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-          run: npm run tauri:build
+
+      - name: Build NSIS installer
+        run: npm run tauri:build
 
       - name: Locate NSIS installer
         id: installer
