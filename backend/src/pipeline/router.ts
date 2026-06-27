@@ -37,7 +37,17 @@ export function route(filePath: string, input: Input): RouteResult {
   }
 
   if (matched.length > 0) {
-    return { kind: 'routed', outputIds: matched };
+    const outputIds = [...matched];
+
+    const matchedRules = activeRules.filter((r) => matched.includes(r.id));
+    if (matchedRules.some((r) => r.also_send_default_fallback)) {
+      const defaultFb = outputsRepo.findDefaultFallback(input.type);
+      if (defaultFb && !outputIds.includes(defaultFb.id)) {
+        outputIds.push(defaultFb.id);
+      }
+    }
+
+    return { kind: 'routed', outputIds };
   }
 
   const fallbackId = resolveFallbackForNoMatch(input.type);

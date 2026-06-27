@@ -14,6 +14,7 @@ import {
   OUTPUT_EXPORT_FORMAT,
   OUTPUT_EXPORT_VERSION,
 } from '../types/outputExport.js';
+import { normalizeWebhookUrls, WebhookConfigError } from '../discord/webhookConfig.js';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -68,10 +69,14 @@ export function validateDestinationConfig(
     }
     return { bot_token: c.bot_token, channel_id: c.channel_id };
   }
-  if (!c?.webhook_url || typeof c.webhook_url !== 'string') {
-    throw new ValidationError('destination_config.webhook_url is required for discord_webhook');
+  try {
+    return { webhook_urls: normalizeWebhookUrls(config) };
+  } catch (err) {
+    if (err instanceof WebhookConfigError) {
+      throw new ValidationError(err.message);
+    }
+    throw err;
   }
-  return { webhook_url: c.webhook_url };
 }
 
 function parseFallbackOutputId(value: unknown): number | null | undefined {
@@ -112,6 +117,7 @@ export function validateNewOutput(body: unknown): NewOutput {
   if (is_fallback && fallback_output_id != null) {
     throw new ValidationError('fallback channels cannot reference another fallback');
   }
+  const also_send_default_fallback = !is_fallback && Boolean(b.also_send_default_fallback);
 
   return {
     name: b.name.trim(),
@@ -121,6 +127,7 @@ export function validateNewOutput(body: unknown): NewOutput {
     is_fallback,
     is_default_fallback: is_fallback ? is_default_fallback : false,
     fallback_output_id: is_fallback ? null : (fallback_output_id ?? null),
+    also_send_default_fallback,
     destination_config: validateDestinationConfig(type, b.destination_config),
     is_active: b.is_active !== false,
   };
@@ -173,6 +180,14 @@ export function validateOutputPatch(
   }
 
   if (b.is_active !== undefined) patch.is_active = Boolean(b.is_active);
+
+  if (b.also_send_default_fallback !== undefined) {
+    patch.also_send_default_fallback = Boolean(b.also_send_default_fallback);
+  }
+
+  if (is_fallback && patch.also_send_default_fallback) {
+    throw new ValidationError('also_send_default_fallback is only valid for routing rules');
+  }
 
   if (!is_fallback && patch.file_patterns !== undefined && patch.file_patterns.length === 0) {
     throw new ValidationError('file_patterns must not be empty for routing rules');
@@ -234,6 +249,7 @@ function validateImportEntry(body: unknown): OutputExportEntry {
     is_default_fallback: is_fallback ? is_default_fallback : false,
     file_patterns,
     fallback_ref: is_fallback ? null : fallback_ref,
+    also_send_default_fallback: is_fallback ? false : Boolean(b.also_send_default_fallback),
     destination_config: validateDestinationConfig(type, b.destination_config),
     is_active: b.is_active !== false,
   };

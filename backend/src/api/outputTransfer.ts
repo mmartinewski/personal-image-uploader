@@ -25,6 +25,7 @@ function toNewOutput(entry: OutputExportEntry, fallback_output_id: number | null
     is_fallback: entry.is_fallback,
     is_default_fallback: entry.is_fallback ? entry.is_default_fallback : false,
     fallback_output_id: entry.is_fallback ? null : fallback_output_id,
+    also_send_default_fallback: entry.is_fallback ? false : entry.also_send_default_fallback,
     destination_config: entry.destination_config,
     is_active: entry.is_active,
   };
@@ -49,6 +50,7 @@ export function exportOutputBundle(): OutputExportBundle {
         o.fallback_output_id != null
           ? (byId.get(o.fallback_output_id)?.name ?? null)
           : null,
+      also_send_default_fallback: o.also_send_default_fallback,
       destination_config: o.destination_config,
       is_active: o.is_active,
     })),

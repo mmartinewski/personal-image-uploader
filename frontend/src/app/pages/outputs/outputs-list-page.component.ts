@@ -175,7 +175,12 @@ import {
                   <td class="px-4 py-3">
                     <app-tag-list [tags]="row.file_patterns" />
                   </td>
-                  <td class="px-4 py-3 text-xs text-slate-400">{{ fallbackLabel(row.fallback_output_id) }}</td>
+                  <td class="px-4 py-3 text-xs text-slate-400">
+                    {{ fallbackLabel(row.fallback_output_id) }}
+                    @if (row.also_send_default_fallback) {
+                      <span class="mt-0.5 block text-indigo-300">+ default fallback</span>
+                    }
+                  </td>
                   <td class="px-4 py-3">
                     <span
                       class="inline-flex rounded-full px-2 py-0.5 text-xs"

@@ -148,7 +148,7 @@ First build can take several minutes (Rust + sidecar rebuild of `better-sqlite3`
 
 ### GitHub Releases
 
-Releases are published automatically when a version tag is pushed. GitHub Actions builds the Windows NSIS installer on `windows-latest` and attaches it to the release.
+Releases are published automatically when a version tag is pushed. GitHub Actions builds the Windows NSIS installer on `windows-latest` and **must** attach `PIU_<version>_x64-setup.exe` to the GitHub Release (the workflow fails if the installer is missing). Do not publish a release without that asset.
 
 **Version source of truth:** root `package.json` → synced to `backend/`, `frontend/`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml` via `npm run version:sync`.
 
@@ -171,7 +171,7 @@ Releases are published automatically when a version tag is pushed. GitHub Action
    git push origin v1.1.0
    ```
 
-4. Open **GitHub → Releases** — the workflow uploads `PIU_<version>_x64-setup.exe` automatically.
+4. Wait for the **Release** workflow to finish, then open **GitHub → Releases** and confirm `PIU_<version>_x64-setup.exe` is attached before announcing the release.
 
 Tags must match `v*.*.*` (e.g. `v1.0.0`, `v1.1.0-beta.1`). Pre-release tags containing `-` are marked as pre-releases on GitHub.
 
@@ -180,7 +180,7 @@ Tags must match `v*.*.*` (e.g. `v1.0.0`, `v1.1.0-beta.1`). Pre-release tags cont
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `.github/workflows/ci.yml` | push/PR to `main` | Build backend + frontend |
-| `.github/workflows/release.yml` | push tag `v*.*.*` | Build Windows installer + GitHub Release |
+| `.github/workflows/release.yml` | push tag `v*.*.*` | Build Windows installer, upload asset, create GitHub Release |
 
 #### First release (v1.0.0)
 

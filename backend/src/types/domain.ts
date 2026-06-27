@@ -30,7 +30,7 @@ export interface DiscordBotConfig {
 }
 
 export interface DiscordWebhookConfig {
-  webhook_url: string;
+  webhook_urls: string[];
 }
 
 export type DestinationConfig = DiscordBotConfig | DiscordWebhookConfig;
@@ -44,6 +44,8 @@ export interface Output {
   is_fallback: boolean;
   is_default_fallback: boolean;
   fallback_output_id: number | null;
+  /** When true (routing rules only), also deliver to the default fallback channel on match. */
+  also_send_default_fallback: boolean;
   destination_config: DestinationConfig;
   is_active: boolean;
   created_at: string;
@@ -58,6 +60,7 @@ export interface NewOutput {
   is_fallback: boolean;
   is_default_fallback?: boolean;
   fallback_output_id?: number | null;
+  also_send_default_fallback?: boolean;
   destination_config: DestinationConfig;
   is_active?: boolean;
 }

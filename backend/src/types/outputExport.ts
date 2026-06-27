@@ -14,6 +14,8 @@ export interface OutputExportEntry {
   file_patterns: string[];
   /** Fallback channel name, or null to use the default fallback. */
   fallback_ref: string | null;
+  /** When true (routing rules only), also deliver to the default fallback channel on match. */
+  also_send_default_fallback: boolean;
   destination_config: DestinationConfig;
   is_active: boolean;
 }

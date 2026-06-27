@@ -16,6 +16,7 @@ interface OutputRow {
   is_fallback: number;
   is_default_fallback: number;
   fallback_output_id: number | null;
+  also_send_default_fallback: number;
   destination_config: string;
   is_active: number;
   created_at: string;
@@ -32,6 +33,7 @@ function mapRow(row: OutputRow): Output {
     is_fallback: row.is_fallback === 1,
     is_default_fallback: row.is_default_fallback === 1,
     fallback_output_id: row.fallback_output_id,
+    also_send_default_fallback: row.also_send_default_fallback === 1,
     destination_config: JSON.parse(row.destination_config) as DestinationConfig,
     is_active: row.is_active === 1,
     created_at: row.created_at,
@@ -140,6 +142,8 @@ export const outputsRepo = {
     const fallback_output_id = is_fallback
       ? null
       : assertFallbackReference(data.input_type, data.fallback_output_id ?? null);
+    const also_send_default_fallback =
+      !is_fallback && data.also_send_default_fallback ? 1 : 0;
     const destination_config = JSON.stringify(data.destination_config);
     const is_active = data.is_active !== false ? 1 : 0;
 
@@ -160,9 +164,9 @@ export const outputsRepo = {
           .prepare(
             `INSERT INTO outputs (
                name, input_type, type, file_patterns, is_fallback, is_default_fallback,
-               fallback_output_id, destination_config, is_active, updated_at
+               fallback_output_id, also_send_default_fallback, destination_config, is_active, updated_at
              )
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
           )
           .run(
             data.name,
@@ -172,6 +176,7 @@ export const outputsRepo = {
             is_fallback,
             is_default_fallback,
             fallback_output_id,
+            also_send_default_fallback,
             destination_config,
             is_active,
           );
@@ -214,6 +219,15 @@ export const outputsRepo = {
             ? patch.fallback_output_id
             : existing.fallback_output_id,
         );
+    const also_send_default_fallback = is_fallback
+      ? 0
+      : patch.also_send_default_fallback !== undefined
+        ? patch.also_send_default_fallback
+          ? 1
+          : 0
+        : existing.also_send_default_fallback
+          ? 1
+          : 0;
     const destination_config = JSON.stringify(
       patch.destination_config ?? existing.destination_config,
     );
@@ -235,7 +249,8 @@ export const outputsRepo = {
       try {
         db.prepare(
           `UPDATE outputs SET name = ?, input_type = ?, type = ?, file_patterns = ?, is_fallback = ?,
-           is_default_fallback = ?, fallback_output_id = ?, destination_config = ?, is_active = ?,
+           is_default_fallback = ?, fallback_output_id = ?, also_send_default_fallback = ?,
+           destination_config = ?, is_active = ?,
            updated_at = datetime('now') WHERE id = ?`,
         ).run(
           name,
@@ -245,6 +260,7 @@ export const outputsRepo = {
           is_fallback,
           is_default_fallback,
           fallback_output_id,
+          also_send_default_fallback,
           destination_config,
           is_active,
           id,

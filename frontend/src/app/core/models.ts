@@ -21,7 +21,8 @@ export interface Output {
   is_fallback: boolean;
   is_default_fallback: boolean;
   fallback_output_id: number | null;
-  destination_config: Record<string, string>;
+  also_send_default_fallback: boolean;
+  destination_config: Record<string, string | string[]>;
   is_active: boolean;
   created_at: string;
   updated_at: string;

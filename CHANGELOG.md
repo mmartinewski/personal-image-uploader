@@ -2,6 +2,18 @@
 
 All notable changes to PIU are documented here. Version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-06-27
+
+### Added
+
+- Multiple Discord webhook URLs per output (tag input in the UI; image sent to every URL)
+- Routing rule option **Also send to the default fallback channel when this rule matches**
+- Export/import preserves `webhook_urls` and `also_send_default_fallback` (legacy `webhook_url` still accepted on import)
+
+### Changed
+
+- Release workflow locates the NSIS installer explicitly and fails if the asset is missing
+
 ## [1.2.0] - 2026-05-31
 
 ### Added
@@ -38,6 +50,7 @@ All notable changes to PIU are documented here. Version numbers follow [Semantic
 - Sidecar asset paths and `bindings` dependency in installer layout
 - False error dialogs on Quit and uninstall
 
+[1.4.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.4.0
 [1.2.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.2.0
 [1.1.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.1.0
 [1.0.0]: https://github.com/mmartinewski/personal-image-uploader/releases/tag/v1.0.0

@@ -57,8 +57,13 @@ type OutputKind = 'fallback' | 'rule';
         }
         @if (form.value.type === 'discord_webhook') {
           <div>
-            <label class="mb-1 block text-xs text-slate-500">Webhook URL</label>
-            <input formControlName="webhook_url" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm" />
+            <label class="mb-1 block text-xs text-slate-500">Webhook URLs</label>
+            <app-tag-input
+              formControlName="webhook_urls"
+              [required]="true"
+              placeholder="https://discord.com/api/webhooks/..."
+              hint="Press Enter to add each webhook URL. The image is sent to every URL listed."
+            />
           </div>
         }
         @if (kind === 'rule') {
@@ -84,6 +89,10 @@ type OutputKind = 'fallback' | 'rule';
               If all active rules agree on the same fallback, that channel is used. Otherwise the default fallback applies.
             </p>
           </div>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" formControlName="also_send_default_fallback" />
+            Also send to the default fallback channel when this rule matches
+          </label>
         }
         @if (kind === 'fallback') {
           <label class="flex items-center gap-2 text-sm">
@@ -119,9 +128,10 @@ export class OutputFormPageComponent implements OnInit {
     type: ['discord_webhook' as OutputType, Validators.required],
     bot_token: [''],
     channel_id: [''],
-    webhook_url: [''],
+    webhook_urls: [[] as string[]],
     file_patterns: [[] as string[]],
     fallback_output_id: [null as number | null],
+    also_send_default_fallback: [false],
     is_default_fallback: [false],
     is_active: [true],
   });
@@ -180,14 +190,23 @@ export class OutputFormPageComponent implements OnInit {
     this.form.patchValue({
       name: row.name,
       type: row.type,
-      bot_token: cfg['bot_token'] ?? '',
-      channel_id: cfg['channel_id'] ?? '',
-      webhook_url: cfg['webhook_url'] ?? '',
+      bot_token: typeof cfg['bot_token'] === 'string' ? cfg['bot_token'] : '',
+      channel_id: typeof cfg['channel_id'] === 'string' ? cfg['channel_id'] : '',
+      webhook_urls: this.webhookUrlsFromConfig(cfg),
       file_patterns: row.file_patterns.map((p) => normalizeFilePatternTag(p)),
       fallback_output_id: row.fallback_output_id,
+      also_send_default_fallback: row.also_send_default_fallback,
       is_default_fallback: row.is_default_fallback,
       is_active: row.is_active,
     });
+  }
+
+  private webhookUrlsFromConfig(cfg: Record<string, string | string[]>): string[] {
+    const urls = cfg['webhook_urls'];
+    if (Array.isArray(urls)) return urls.filter((u) => typeof u === 'string' && u.trim());
+    const legacy = cfg['webhook_url'];
+    if (typeof legacy === 'string' && legacy.trim()) return [legacy.trim()];
+    return [];
   }
 
   updateValidators(): void {
@@ -195,9 +214,9 @@ export class OutputFormPageComponent implements OnInit {
     if (type === 'discord_bot') {
       this.form.get('bot_token')?.setValidators(Validators.required);
       this.form.get('channel_id')?.setValidators(Validators.required);
-      this.form.get('webhook_url')?.clearValidators();
+      this.form.get('webhook_urls')?.clearValidators();
     } else {
-      this.form.get('webhook_url')?.setValidators(Validators.required);
+      this.form.get('webhook_urls')?.setValidators(Validators.required);
       this.form.get('bot_token')?.clearValidators();
       this.form.get('channel_id')?.clearValidators();
     }
@@ -208,10 +227,11 @@ export class OutputFormPageComponent implements OnInit {
     } else {
       patterns?.setValue([], { emitEvent: false });
       patterns?.disable({ emitEvent: false });
+      this.form.patchValue({ also_send_default_fallback: false }, { emitEvent: false });
     }
     patterns?.updateValueAndValidity();
 
-    ['bot_token', 'channel_id', 'webhook_url'].forEach((k) =>
+    ['bot_token', 'channel_id', 'webhook_urls'].forEach((k) =>
       this.form.get(k)?.updateValueAndValidity(),
     );
   }
@@ -223,7 +243,7 @@ export class OutputFormPageComponent implements OnInit {
     const destination_config =
       v.type === 'discord_bot'
         ? { bot_token: v.bot_token!, channel_id: v.channel_id! }
-        : { webhook_url: v.webhook_url! };
+        : { webhook_urls: (v.webhook_urls ?? []).map((u) => u.trim()).filter(Boolean) };
 
     const is_fallback = this.kind === 'fallback';
     const body = {
@@ -236,6 +256,7 @@ export class OutputFormPageComponent implements OnInit {
       is_fallback,
       is_default_fallback: is_fallback ? (v.is_default_fallback ?? false) : false,
       fallback_output_id: is_fallback ? null : v.fallback_output_id,
+      also_send_default_fallback: is_fallback ? false : (v.also_send_default_fallback ?? false),
       destination_config,
       is_active: v.is_active ?? true,
     };

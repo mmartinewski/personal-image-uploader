@@ -18,6 +18,7 @@ export function buildOutputExportBundle(outputs: Output[]): OutputExportBundle {
         o.fallback_output_id != null
           ? (byId.get(o.fallback_output_id)?.name ?? null)
           : null,
+      also_send_default_fallback: o.also_send_default_fallback,
       destination_config: { ...o.destination_config },
       is_active: o.is_active,
     })),
