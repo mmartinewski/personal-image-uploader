@@ -13,6 +13,7 @@ All notable changes to PIU are documented here. Version numbers follow [Semantic
 ### Changed
 
 - Release workflow locates the NSIS installer explicitly and fails if the asset is missing
+- Release CI uses `windows-2022` with MSVC for `better-sqlite3` native rebuild (fixes node-gyp on newer GitHub runners)
 
 ## [1.2.0] - 2026-05-31
 

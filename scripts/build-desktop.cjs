@@ -94,6 +94,8 @@ function rebuildBetterSqlite3ForPkg() {
       npm_config_target_arch: 'x64',
       npm_config_disturl: 'https://nodejs.org/dist',
       npm_config_runtime: 'node',
+      npm_config_msvs_version: process.env.npm_config_msvs_version || '2022',
+      GYP_MSVS_VERSION: process.env.GYP_MSVS_VERSION || '2022',
     },
     stdio: 'inherit',
     shell: true,
