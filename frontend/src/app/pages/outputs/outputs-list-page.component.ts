@@ -12,6 +12,10 @@ import {
   downloadJsonFile,
 } from '../../shared/output-export.util';
 
+type SortDir = 'asc' | 'desc';
+type FallbackSortKey = 'name' | 'type' | 'is_default_fallback' | 'is_active';
+type RuleSortKey = 'name' | 'type' | 'patterns' | 'fallback' | 'is_active';
+
 @Component({
   selector: 'app-outputs-list-page',
   standalone: true,
@@ -103,26 +107,51 @@ import {
           <table class="w-full text-left text-sm">
             <thead class="border-b border-amber-900/40 bg-amber-950/20 text-slate-500">
               <tr>
-                <th class="px-4 py-3 font-medium">Name</th>
-                <th class="px-4 py-3 font-medium">Type</th>
-                <th class="px-4 py-3 font-medium">Default</th>
-                <th class="px-4 py-3 font-medium">Active</th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setFallbackSort('name')">
+                    Name {{ sortIndicator(fallbackSortKey, 'name', fallbackSortDir) }}
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setFallbackSort('type')">
+                    Type {{ sortIndicator(fallbackSortKey, 'type', fallbackSortDir) }}
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setFallbackSort('is_default_fallback')">
+                    Default {{ sortIndicator(fallbackSortKey, 'is_default_fallback', fallbackSortDir) }}
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setFallbackSort('is_active')">
+                    Active {{ sortIndicator(fallbackSortKey, 'is_active', fallbackSortDir) }}
+                  </button>
+                </th>
                 <th class="px-4 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
-              @for (row of fallbackChannels; track row.id) {
+              @for (row of sortedFallbackChannels; track row.id) {
                 <tr class="border-b border-amber-950/30 last:border-0 hover:bg-amber-950/10">
                   <td class="px-4 py-3 font-medium">{{ row.name }}</td>
                   <td class="px-4 py-3">{{ row.type }}</td>
                   <td class="px-4 py-3">{{ row.is_default_fallback ? 'Yes' : '—' }}</td>
                   <td class="px-4 py-3">
-                    <span
-                      class="inline-flex rounded-full px-2 py-0.5 text-xs"
-                      [class]="row.is_active ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-400'"
-                    >
-                      {{ row.is_active ? 'Active' : 'Inactive' }}
-                    </span>
+                    <label class="inline-flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        class="rounded border-slate-600 bg-slate-800 text-indigo-500"
+                        [checked]="row.is_active"
+                        [disabled]="togglingIds.has(row.id)"
+                        (change)="toggleActive(row, $event)"
+                      />
+                      <span
+                        class="text-xs"
+                        [class]="row.is_active ? 'text-emerald-300' : 'text-slate-400'"
+                      >
+                        {{ row.is_active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </label>
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex justify-end gap-1">
@@ -159,16 +188,36 @@ import {
           <table class="w-full text-left text-sm">
             <thead class="border-b border-slate-800 bg-slate-900/60 text-slate-500">
               <tr>
-                <th class="px-4 py-3 font-medium">Name</th>
-                <th class="px-4 py-3 font-medium">Type</th>
-                <th class="px-4 py-3 font-medium">Patterns</th>
-                <th class="px-4 py-3 font-medium">Fallback</th>
-                <th class="px-4 py-3 font-medium">Active</th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setRuleSort('name')">
+                    Name {{ sortIndicator(ruleSortKey, 'name', ruleSortDir) }}
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setRuleSort('type')">
+                    Type {{ sortIndicator(ruleSortKey, 'type', ruleSortDir) }}
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setRuleSort('patterns')">
+                    Patterns {{ sortIndicator(ruleSortKey, 'patterns', ruleSortDir) }}
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setRuleSort('fallback')">
+                    Fallback {{ sortIndicator(ruleSortKey, 'fallback', ruleSortDir) }}
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" class="sort-header" (click)="setRuleSort('is_active')">
+                    Active {{ sortIndicator(ruleSortKey, 'is_active', ruleSortDir) }}
+                  </button>
+                </th>
                 <th class="px-4 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
-              @for (row of rules; track row.id) {
+              @for (row of sortedRules; track row.id) {
                 <tr class="border-b border-slate-900 last:border-0 hover:bg-slate-900/40">
                   <td class="px-4 py-3 font-medium">{{ row.name }}</td>
                   <td class="px-4 py-3">{{ row.type }}</td>
@@ -182,12 +231,21 @@ import {
                     }
                   </td>
                   <td class="px-4 py-3">
-                    <span
-                      class="inline-flex rounded-full px-2 py-0.5 text-xs"
-                      [class]="row.is_active ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-400'"
-                    >
-                      {{ row.is_active ? 'Active' : 'Inactive' }}
-                    </span>
+                    <label class="inline-flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        class="rounded border-slate-600 bg-slate-800 text-indigo-500"
+                        [checked]="row.is_active"
+                        [disabled]="togglingIds.has(row.id)"
+                        (change)="toggleActive(row, $event)"
+                      />
+                      <span
+                        class="text-xs"
+                        [class]="row.is_active ? 'text-emerald-300' : 'text-slate-400'"
+                      >
+                        {{ row.is_active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </label>
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex justify-end gap-1">
@@ -212,6 +270,22 @@ import {
       }
     </section>
   `,
+  styles: `
+    .sort-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+    }
+    .sort-header:hover {
+      color: rgb(203 213 225);
+    }
+  `,
 })
 export class OutputsListPageComponent implements OnInit {
   private readonly api = inject(ApiService);
@@ -220,6 +294,22 @@ export class OutputsListPageComponent implements OnInit {
   importDialogOpen = false;
   fallbackChannels: Output[] = [];
   rules: Output[] = [];
+  togglingIds = new Set<number>();
+
+  fallbackSortKey: FallbackSortKey = 'name';
+  fallbackSortDir: SortDir = 'asc';
+  ruleSortKey: RuleSortKey = 'name';
+  ruleSortDir: SortDir = 'asc';
+
+  get sortedFallbackChannels(): Output[] {
+    return this.sortOutputs(this.fallbackChannels, this.fallbackSortKey, this.fallbackSortDir);
+  }
+
+  get sortedRules(): Output[] {
+    return this.sortOutputs(this.rules, this.ruleSortKey, this.ruleSortDir, (row) =>
+      this.fallbackLabel(row.fallback_output_id),
+    );
+  }
 
   ngOnInit(): void {
     this.load();
@@ -235,6 +325,85 @@ export class OutputsListPageComponent implements OnInit {
   fallbackLabel(id: number | null): string {
     if (id == null) return 'Default';
     return this.fallbackChannels.find((f) => f.id === id)?.name ?? `#${id}`;
+  }
+
+  sortIndicator(currentKey: string, key: string, dir: SortDir): string {
+    return currentKey === key ? (dir === 'asc' ? '↑' : '↓') : '';
+  }
+
+  setFallbackSort(key: FallbackSortKey): void {
+    if (this.fallbackSortKey === key) {
+      this.fallbackSortDir = this.fallbackSortDir === 'asc' ? 'desc' : 'asc';
+      return;
+    }
+    this.fallbackSortKey = key;
+    this.fallbackSortDir = 'asc';
+  }
+
+  setRuleSort(key: RuleSortKey): void {
+    if (this.ruleSortKey === key) {
+      this.ruleSortDir = this.ruleSortDir === 'asc' ? 'desc' : 'asc';
+      return;
+    }
+    this.ruleSortKey = key;
+    this.ruleSortDir = 'asc';
+  }
+
+  toggleActive(row: Output, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const next = input.checked;
+    if (this.togglingIds.has(row.id)) return;
+
+    const previous = row.is_active;
+    row.is_active = next;
+    this.togglingIds.add(row.id);
+
+    this.api.updateOutput(row.id, { is_active: next }).subscribe({
+      next: (updated) => {
+        row.is_active = updated.is_active;
+        this.togglingIds.delete(row.id);
+      },
+      error: (err) => {
+        row.is_active = previous;
+        input.checked = previous;
+        this.togglingIds.delete(row.id);
+        alert(err.error?.error ?? 'Failed to update');
+      },
+    });
+  }
+
+  private sortOutputs(
+    list: Output[],
+    key: FallbackSortKey | RuleSortKey,
+    dir: SortDir,
+    fallbackLabelFn?: (row: Output) => string,
+  ): Output[] {
+    const factor = dir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => factor * this.compareOutputs(a, b, key, fallbackLabelFn));
+  }
+
+  private compareOutputs(
+    a: Output,
+    b: Output,
+    key: FallbackSortKey | RuleSortKey,
+    fallbackLabelFn?: (row: Output) => string,
+  ): number {
+    switch (key) {
+      case 'name':
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      case 'type':
+        return a.type.localeCompare(b.type);
+      case 'is_default_fallback':
+        return Number(a.is_default_fallback) - Number(b.is_default_fallback);
+      case 'is_active':
+        return Number(a.is_active) - Number(b.is_active);
+      case 'patterns':
+        return a.file_patterns.join(',').localeCompare(b.file_patterns.join(','));
+      case 'fallback':
+        return (fallbackLabelFn?.(a) ?? '').localeCompare(fallbackLabelFn?.(b) ?? '');
+      default:
+        return 0;
+    }
   }
 
   remove(row: Output): void {

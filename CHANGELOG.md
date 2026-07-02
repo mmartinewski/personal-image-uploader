@@ -2,6 +2,13 @@
 
 All notable changes to PIU are documented here. Version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-07-02
+
+### Added
+
+- Outputs list: sortable column headers (default sort by name)
+- Outputs list: enable or disable outputs inline without opening the edit form
+
 ## [1.4.0] - 2026-06-27
 
 ### Added
